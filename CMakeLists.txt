@@ -189,6 +189,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   # Copyright(c) 2020 livoxtech limited.
 
   cmake_minimum_required(VERSION 3.14)
+  cmake_policy(SET CMP0144 NEW)
   project(livox_ros_driver2)
 
   # Default to C99
@@ -196,9 +197,9 @@ else(ROS_EDITION STREQUAL "ROS2")
     set(CMAKE_C_STANDARD 99)
   endif()
 
-  # Default to C++14
+  # Default to C++14 change to 17
   if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_STANDARD 17)
   endif()
 
   list(INSERT CMAKE_MODULE_PATH 0 "${PROJECT_SOURCE_DIR}/cmake/modules")
@@ -287,9 +288,20 @@ else(ROS_EDITION STREQUAL "ROS2")
     ${LIVOX_INTERFACES} "rosidl_typesupport_cpp")
     target_link_libraries(${PROJECT_NAME} "${cpp_typesupport_target}")
   else()
+    # set(LIVOX_INTERFACE_TARGET "${LIVOX_INTERFACES}__rosidl_typesupport_cpp")
+    # add_dependencies(${PROJECT_NAME} ${LIVOX_INTERFACES})
+    # get_target_property(LIVOX_INTERFACES_INCLUDE_DIRECTORIES ${LIVOX_INTERFACE_TARGET} INTERFACE_INCLUDE_DIRECTORIES)
+    
+    # --- MODIFICACIÓN PARA JAZZY ---
+    # En lugar de buscar propiedades que fallan en versiones nuevas de ROS, 
+    # forzamos la ruta donde rosidl genera los headers.
     set(LIVOX_INTERFACE_TARGET "${LIVOX_INTERFACES}__rosidl_typesupport_cpp")
     add_dependencies(${PROJECT_NAME} ${LIVOX_INTERFACES})
-    get_target_property(LIVOX_INTERFACES_INCLUDE_DIRECTORIES ${LIVOX_INTERFACE_TARGET} INTERFACE_INCLUDE_DIRECTORIES)
+
+    # Esto obtiene la ruta de construcción de los mensajes de forma segura
+    set(LIVOX_INTERFACES_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp")
+
+    # --- FIN MODIFICACIÓN ---
   endif()
 
   # include file direcotry
@@ -305,7 +317,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   # link libraries
   target_link_libraries(${PROJECT_NAME}
     ${LIVOX_LIDAR_SDK_LIBRARY}
-    ${LIVOX_INTERFACE_TARGET}   # for custom msgs
+    ${LIVOX_INTERFACE_TARGET}
     ${PPT_LIBRARY}
     ${Boost_LIBRARY}
     ${PCL_LIBRARIES}
